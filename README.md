@@ -6,7 +6,7 @@ It's based on Electron to ensure multiplat functionallity.
 
 *v0.1 Notes:
 There may be some lingering bugs, but the core functionallity should be working well enough! ... and I'm going to bed :-)*
-Electronm Developer menu can be accessed with: *set NODE_ENV=development* 
+Electron Developer menu can be accessed with: *set NODE_ENV=development* 
 
 
 **NEXT UP:**
