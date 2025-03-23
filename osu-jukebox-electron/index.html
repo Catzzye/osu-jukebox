@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>osu!jukebox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #f94ed4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            transition: background-color 0.3s, padding 0.3s;
+            white-space: nowrap;
+        }
+        .button:hover {
+            background-color: #c50a9d;
+        }
+        .button i {
+            margin-right: 8px;
+        }
+        #audioPlayer {
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background-color: #950375;
+            color: white;
+            padding: 10px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
+        .dark-mode {
+            background-color: #333;
+            color: #f5f5f5;
+        }
+        .dark-mode .button {
+            background-color: #555;
+            color: #f5f5f5;
+        }
+        .dark-mode .button:hover {
+            background-color: #777;
+        }
+        .dark-mode #audioPlayer {
+            background-color: #222;
+        }
+        @media (max-width: 600px) {
+            .button {
+                padding: 10px;
+            }
+            .button span {
+                display: none;
+            }
+        }
+        #playlist {
+            margin: 20px 0;
+            max-height: calc(100vh - 160px);
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-grow: 1;
+            display: none;
+        }
+        .song-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .song-item:hover {
+            background-color: #f0f0f0;
+        }
+        .dark-mode #playlist {
+            background-color: #444;
+            color: #f5f5f5;
+        }
+        .dark-mode .song-item {
+            border-bottom: 1px solid #555;
+        }
+        .dark-mode .song-item:hover {
+            background-color: #555;
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 1000;
+            display: none;
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background-color: #ccc;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+        .dark-mode hr {
+            background-color: #555;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="controls">
+        <button id="selectFolder" class="button"><i class="fas fa-folder-open"></i><span>Select osu! folder</span></button>
+        <button id="changeFolder" class="button" style="display: none;"><i class="fas fa-folder-open"></i><span>Change Folder</span></button>
+        <button id="clearList" class="button"><i class="fas fa-trash"></i><span>Reset Song List</span></button>
+        <button id="toggleTheme" class="button"><i class="fas fa-moon"></i><span>Dark Mode</span></button>
+    </div>
+    <hr>
+    <div id="playlist"></div>
+    <audio id="audioPlayer" controls></audio>
+    <div id="overlay">Scanning in progress... <br>This may take a while, depending on the size of your osu! songs folder!</div>
+    <script src="renderer.js"></script>
+</body>
+</html> 

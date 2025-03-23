@@ -1,0 +1,14 @@
+{
+  "name": "osu-jukebox-electron",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@electron/remote": "^2.0.12",
+    "electron": "^28.2.0",
+    "howler": "^2.2.4",
+    "music-metadata": "^7.14.0"
+  }
+}
