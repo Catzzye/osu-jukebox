@@ -3,11 +3,9 @@ const fs = require('fs')
 const path = require('path')
 const mm = require('music-metadata')
 const os = require('os')
-const { Howl, Howler } = require('howler')
 
 let playlist = []
 let currentSongIndex = -1
-let currentSound = null
 
 document.addEventListener('DOMContentLoaded', async () => {
     const savedPath = localStorage.getItem('selectedFolder');
@@ -100,7 +98,7 @@ async function scanDirectory(directoryPath) {
                         title: metadata.common.title || path.basename(filePath),
                         artist: metadata.common.artist || 'Unknown Artist',
                         duration: metadata.format.duration,
-                        image: imagePath
+                        image: imagePath 
                     })
                 } catch (err) {
                     console.error(`Error reading metadata for ${filePath}:`, err)
@@ -121,8 +119,8 @@ function updatePlaylistUI() {
     playlist.forEach((song, index) => {
         const songElement = document.createElement('div');
         songElement.className = 'song-item';
-        songElement.style.position = 'relative';
-        songElement.style.marginBottom = '5px';
+        songElement.style.position = 'relative'; 
+        songElement.style.marginBottom = '5px'; 
         songElement.style.height = '40px'; 
 
         const backgroundImage = document.createElement('div');
@@ -131,7 +129,7 @@ function updatePlaylistUI() {
         backgroundImage.style.left = '0';
         backgroundImage.style.right = '0';
         backgroundImage.style.bottom = '0';
-        backgroundImage.style.zIndex = '0';
+        backgroundImage.style.zIndex = '0'; 
 
         if (song.image) {
             const imageUrl = `file://${encodeURI(song.image.replace(/\\/g, '/'))}`;
@@ -146,19 +144,19 @@ function updatePlaylistUI() {
 
         const songText = document.createElement('span');
         songText.textContent = `${song.title} - ${song.artist}`;
-        songText.style.position = 'relative';
-        songText.style.zIndex = '1';
-        songText.style.fontWeight = 'bold';
-        songText.style.padding = '2px 4px';
+        songText.style.position = 'relative'; 
+        songText.style.zIndex = '1'; 
+        songText.style.fontWeight = 'bold'; 
+        songText.style.padding = '2px 4px'; 
 
-        songElement.style.width = 'calc(100% - 20px)';
+        songElement.style.width = 'calc(100% - 20px)'; 
         const body = document.body;
         if (body.classList.contains('dark-mode')) {
             songText.style.color = 'black';
             songText.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
         } else {
             songText.style.color = 'white';
-            songText.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            songText.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'; 
         }
 
         songElement.appendChild(songText);
@@ -173,29 +171,15 @@ function updatePlaylistUI() {
 }
 
 function playSong(index) {
-    if (currentSound) {
-        currentSound.stop();
-    }
-
-    currentSongIndex = index;
-    const song = playlist[index];
-
-    currentSound = new Howl({
-        src: [song.path],
-        volume: 1.0,
-        onend: () => {
-            if (currentSongIndex < playlist.length - 1) {
-                playSong(currentSongIndex + 1);
-            }
-        }
-    });
-
-    currentSound.play();
-    updatePlaylistUI();
+    const audioPlayer = document.getElementById('audioPlayer')
+    currentSongIndex = index
+    audioPlayer.src = playlist[index].path
+    audioPlayer.play()
+    updatePlaylistUI()
 }
 
-function setVolume(value) {
-    if (currentSound) {
-        currentSound.volume(value);
+document.getElementById('audioPlayer').addEventListener('ended', () => {
+    if (currentSongIndex < playlist.length - 1) {
+        playSong(currentSongIndex + 1)
     }
-} 
+}) 
