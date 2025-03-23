@@ -47,6 +47,46 @@ document.getElementById('toggleTheme').addEventListener('click', () => {
     updatePlaylistUI();
 });
 
+document.getElementById('infoButton').addEventListener('click', () => {
+    const infoWindow = document.createElement('div');
+    infoWindow.style.position = 'fixed';
+    infoWindow.style.top = '50%';
+    infoWindow.style.left = '50%';
+    infoWindow.style.transform = 'translate(-50%, -50%)';
+    infoWindow.style.backgroundColor = 'white';
+    infoWindow.style.padding = '20px';
+    infoWindow.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    infoWindow.style.zIndex = '1001';
+    infoWindow.style.textAlign = 'center';
+    infoWindow.style.borderRadius = '8px';
+
+    const logo = document.createElement('img');
+    logo.src = 'jb_logo.png';
+    logo.style.width = '175px';
+    logo.style.marginBottom = '1px';
+
+    const version = document.createElement('p');
+    version.textContent = 'Version: 0.1';
+
+    const author = document.createElement('p');
+    author.textContent = 'By Catzzye (:';
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.className = 'button';
+    closeButton.style.marginTop = '10px';
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(infoWindow);
+    });
+
+    infoWindow.appendChild(logo);
+    infoWindow.appendChild(version);
+    infoWindow.appendChild(author);
+    infoWindow.appendChild(closeButton);
+
+    document.body.appendChild(infoWindow);
+});
+
 async function selectAndScanFolder() {
     const userHomeDir = os.homedir();
     const defaultPath = path.join(userHomeDir, 'AppData', 'Local', 'osu!', 'Songs');

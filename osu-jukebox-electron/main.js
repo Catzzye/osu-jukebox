@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, Menu } = require('electron')
 require('@electron/remote/main').initialize()
 
 const createWindow = () => {
@@ -15,6 +15,10 @@ const createWindow = () => {
 
   require('@electron/remote/main').enable(win.webContents)
   win.loadFile('index.html')
+
+  if (process.env.NODE_ENV !== 'development') {
+    Menu.setApplicationMenu(null)
+  }
 }
 
 app.whenReady().then(() => {

@@ -3,12 +3,18 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "packageWin": "electron-packager . osu-jukebox-electron --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
+    "packageMac": "electron-packager . osu-jukebox-electron --platform=darwin --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
+    "packageLinux": "electron-packager . osu-jukebox-electron --platform=linux --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico"
   },
   "dependencies": {
     "@electron/remote": "^2.0.12",
     "electron": "^28.2.0",
     "howler": "^2.2.4",
     "music-metadata": "^7.14.0"
+  },
+  "devDependencies": {
+    "electron-packager": "^17.1.2"
   }
 }
