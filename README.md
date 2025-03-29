@@ -12,7 +12,7 @@ It's based on Electron to ensure multiplat functionallity.
 4. You are now able to search via Tags AND the Mapper!
 5. Added a 'Now Playing' section displaying current track info (Title, Artist, Creator).
 
-**QoL (Quality of Life):**
+**QoL:**
 1. Made volume persistant between tracks (LOL)
 2. If `osu!` folder is selected, select the `Songs` folder within it directly.
 3. Search optimisations, scan optimisations, image display optimisations (Images loaded don't force refresh on every action anymore)
