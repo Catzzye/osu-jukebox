@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
     <title>osu!jukebox</title>
     <style>
         body {
@@ -10,7 +12,9 @@
             margin: 0;
             display: flex;
             flex-direction: column;
+            padding-bottom: 70px;
             height: 100vh;
+            box-sizing: border-box;
             overflow: hidden;
             transition: background-color 0.3s, color 0.3s;
         }
@@ -19,6 +23,7 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 20px;
+            align-items: center;
         }
         .button {
             padding: 10px 20px;
@@ -71,22 +76,37 @@
             }
         }
         #playlist {
-            margin: 20px 0;
-            max-height: calc(100vh - 160px);
+            margin: 5px 0;
+            max-height: calc(100vh - 200px);
             overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc transparent;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             flex-grow: 1;
             display: none;
+            padding-bottom: 60px;
+            box-sizing: border-box;
         }
         .song-item {
             padding: 12px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
+            padding-left: 17px;
+            border-left: 5px solid transparent;
+            transition: background-color 0.2s, border-left-color 0.2s;
         }
         .song-item:hover {
             background-color: #f0f0f0;
+        }
+        .song-item.playing {
+            background-color: #e8e8e8;
+            border-left: 5px solid #f94ed4;
+        }
+        .song-item.playing > span {
+            margin-left: -5px;
         }
         .dark-mode #playlist {
             background-color: #444;
@@ -94,9 +114,17 @@
         }
         .dark-mode .song-item {
             border-bottom: 1px solid #555;
+            border-left-color: transparent;
         }
         .dark-mode .song-item:hover {
             background-color: #555;
+        }
+        .dark-mode .song-item.playing {
+            background-color: #505050;
+            border-left: 5px solid #c50a9d;
+        }
+        .dark-mode .song-item.playing > span {
+            margin-left: -5px;
         }
         #overlay {
             position: fixed;
@@ -134,6 +162,8 @@
             display: flex;
             align-items: center;
             justify-content: space-around;
+            height: 60px;
+            box-sizing: border-box;
         }
         .volume-icon {
             margin-left: 20px;
@@ -144,6 +174,156 @@
         .dark-mode .volume-icon {
             color: orange;
         }
+
+        #playlist::-webkit-scrollbar-track {
+            background: transparent; 
+            border-radius: 5px;
+        }
+
+        #playlist::-webkit-scrollbar-thumb {
+            background-color: #ccc; 
+            border-radius: 5px;
+            border: 2px solid transparent; 
+            background-clip: content-box;
+        }
+        #playlist::-webkit-scrollbar-thumb:hover {
+             background-color: #aaa; 
+        }
+        
+        #playlist::-webkit-scrollbar {
+            width: 10px; 
+        }
+        
+        
+        body:not(.dark-mode) #playlist::-webkit-scrollbar-thumb {
+            background-color: #f94ed4; 
+        }
+         body:not(.dark-mode) #playlist::-webkit-scrollbar-thumb:hover {
+             background-color: #d10bac; 
+        }
+        
+        body:not(.dark-mode) #playlist {
+             scrollbar-color: #f94ed4 transparent;
+        }
+        
+        body.dark-mode #playlist::-webkit-scrollbar-thumb {
+            background-color: #ff8c00; 
+        }
+         body.dark-mode #playlist::-webkit-scrollbar-thumb:hover {
+             background-color: #cc7000; 
+        }
+         
+         body.dark-mode #playlist {
+             scrollbar-color: #ff8c00 transparent;
+         }
+        
+        #nowPlayingDisplay {
+            padding: 8px 15px; 
+            margin-top: 5px; 
+            text-align: center; 
+            color: #ff8c00; 
+            font-size: 0.9em; 
+            border-radius: 4px; 
+            
+            background-color: #ffe0f7; 
+            box-shadow: inset 0 0 3px rgba(0,0,0,0.1); 
+            margin-bottom: 5px;
+        }
+
+        #nowPlayingText strong {
+            font-weight: bold; 
+        }
+
+        
+        body.dark-mode #nowPlayingDisplay {
+            background-color: #3a3a3a; 
+            box-shadow: inset 0 0 3px rgba(255,255,255,0.1); 
+        }
+        .spacer {
+            flex-grow: 1;
+        }
+
+        
+        .info-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5); 
+          z-index: 1000; 
+          display: flex; 
+          justify-content: center;
+          align-items: center;
+          backdrop-filter: blur(2px); 
+          -webkit-backdrop-filter: blur(2px); 
+        }
+
+        
+        .info-popup {
+          padding: 20px 25px; 
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); 
+          z-index: 1001; 
+          text-align: center;
+          border-radius: 8px; 
+          width: 300px; 
+          max-width: 90%;
+          box-sizing: border-box;
+          border: 1px solid rgba(0,0,0,0.05); 
+
+          
+          background-color: #ffffff;
+          color: #333333;
+          transition: background-color 0.3s, color 0.3s; 
+        }
+
+        .info-popup img {
+          width: 150px; 
+          margin-bottom: 10px; 
+        }
+
+        .info-popup p {
+          margin: 5px 0; 
+          line-height: 1.4;
+          font-size: 0.9em; 
+        }
+
+        
+        .info-popup .button {
+            margin-top: 15px; 
+            
+            
+            padding: 8px 25px; 
+            
+            justify-content: center; 
+        }
+         .info-popup .button i { 
+             display: none;
+         }
+
+        
+        body.dark-mode .info-overlay {
+           background-color: rgba(10, 10, 10, 0.7); 
+           backdrop-filter: blur(3px);
+           -webkit-backdrop-filter: blur(3px);
+        }
+
+        body.dark-mode .info-popup {
+          background-color: #3a3a3a; 
+          color: #e0e0e0; 
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); 
+          border: 1px solid rgba(255,255,255,0.1); 
+        }
+
+        
+        
+         body.dark-mode .info-popup .button {
+             
+             
+             
+             
+             justify-content: center;
+         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
@@ -151,16 +331,19 @@
     <div id="controls">
         <button id="selectFolder" class="button"><i class="fas fa-folder-open"></i><span>Select osu! folder</span></button>
         <button id="changeFolder" class="button" style="display: none;"><i class="fas fa-folder-open"></i><span>Change Folder</span></button>
-        <button id="clearList" class="button"><i class="fas fa-trash"></i><span>Reset Song List</span></button>
+        <div class="spacer"></div>
         <button id="toggleTheme" class="button"><i class="fas fa-moon"></i><span>Dark Mode</span></button>
+        <button id="clearList" class="button"><i class="fas fa-trash"></i><span>Reset Song List</span></button>
         <button id="infoButton" class="button"><i class="fas fa-info-circle"></i><span>Information</span></button>
     </div>
     <div id="searchContainer" style="position: relative; margin-bottom: 10px; display: flex; align-items: center;">
         <i id="searchIcon" class="fas fa-search" style="margin-right: 10px; color: #f94ed4;"></i>
         <input type="text" id="searchInput" placeholder="Search your osu! library!" style="padding: 10px; width: calc(100% - 40px); border-radius: 20px; border: 1px solid #ccc;">
     </div>
-    <hr>
     <div id="playlist"></div>
+    <div id="nowPlayingDisplay">
+        <span id="nowPlayingText">Select your osu! folder to start listening!</span>
+    </div>
     <div id="audioControls">
         <button id="prevTrackButton" class="button" style="margin-right: 10px;"><i style="padding-left: 8px;" class="fas fa-backward"></i></button>
         <button id="playPauseButton" class="button" style="margin-right: 10px;"><i style="padding-left: 8px;" class="fas fa-play"></i></button>
@@ -171,7 +354,7 @@
         <i style="margin-left: 10px; margin-right: -5px;" class="fas fa-volume-up volume-icon"></i>
         <input type="range" id="volumeControl" min="0" max="1" step="0.01" value="1" style="width: 100px; margin-left: 10px; margin-right: 15px; background-color: #333;">
     </div>
-    <div id="overlay">Scanning in progress... <br>This may take a while, depending on the size of your osu! songs folder!</div>
+    <div id="overlay">Scanning in progress... <br>This may take a while, depending on the size of your osu! library!</div>
     <script src="renderer.js"></script>
 </body>
 </html> 

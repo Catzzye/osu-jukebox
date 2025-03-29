@@ -3,6 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const mm = require('music-metadata')
 const os = require('os')
+const { pathToFileURL } = require('url')
 var { Howl, Howler } = require('howler')
 
 let playlist = []
@@ -10,6 +11,9 @@ let currentSongIndex = -1
 let currentHowl = null
 let isPlaying = false
 let currentVolume = 1;
+let totalFolders = 0;
+let scannedFolders = 0;
+let songElements = [];
 
 const playlistFilePath = path.join(os.homedir(), 'osu_jukebox_playlist.json')
 
@@ -22,10 +26,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('selectFolder').style.display = 'none'
         document.getElementById('changeFolder').style.display = 'inline-block'
     } else if (savedPath) {
+        document.getElementById('nowPlayingText').textContent = 'Select your osu! folder to start listening!';
         await scanDirectory(savedPath)
-        document.getElementById('playlist').style.display = 'block'
-        document.getElementById('selectFolder').style.display = 'none'
-        document.getElementById('changeFolder').style.display = 'inline-block'
+        if (playlist.length > 0) {
+            savePlaylistToFile();
+            updatePlaylistUI();
+            document.getElementById('nowPlayingText').textContent = 'Select a song to play!';
+            document.getElementById('playlist').style.display = 'block'
+            document.getElementById('selectFolder').style.display = 'none'
+            document.getElementById('changeFolder').style.display = 'inline-block'
+        } else {
+            localStorage.removeItem('selectedFolder');
+        }
     }
 })
 
@@ -45,6 +57,18 @@ document.getElementById('clearList').addEventListener('click', () => {
     document.getElementById('changeFolder').style.display = 'none'
     if (fs.existsSync(playlistFilePath)) {
         fs.unlinkSync(playlistFilePath)
+    }
+    localStorage.removeItem('selectedFolder');
+    document.getElementById('nowPlayingText').textContent = 'Select your osu! folder to start listening!';
+    if (currentHowl) {
+        currentHowl.stop();
+        currentHowl = null;
+        currentSongIndex = -1;
+        isPlaying = false;
+        document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>';
+        document.getElementById('currentTime').textContent = '0:00';
+        document.getElementById('duration').textContent = '0:00';
+        document.getElementById('seekBar').value = 0;
     }
 })
 
@@ -87,55 +111,47 @@ document.getElementById('toggleTheme').addEventListener('click', () => {
 })
 
 document.getElementById('infoButton').addEventListener('click', () => {
-    const infoWindow = document.createElement('div')
-    infoWindow.style.position = 'fixed'
-    infoWindow.style.top = '50%'
-    infoWindow.style.left = '50%'
-    infoWindow.style.transform = 'translate(-50%, -50%)'
-    infoWindow.style.padding = '20px'
-    infoWindow.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)'
-    infoWindow.style.zIndex = '1001'
-    infoWindow.style.textAlign = 'center'
-    infoWindow.style.borderRadius = '8px'
+    const infoOverlay = document.createElement('div');
+    infoOverlay.className = 'info-overlay';
 
-    const body = document.body
-    if (body.classList.contains('dark-mode')) {
-        infoWindow.style.backgroundColor = '#444'
-        infoWindow.style.color = '#f5f5f5'
-    } else {
-        infoWindow.style.backgroundColor = 'white'
-        infoWindow.style.color = 'black'
-    }
+    const infoWindow = document.createElement('div');
+    infoWindow.className = 'info-popup';
 
-    const logo = document.createElement('img')
-    logo.src = 'jb_logo.png'
-    logo.style.width = '175px'
-    logo.style.marginBottom = '1px'
+    const logo = document.createElement('img');
+    logo.src = 'jb_logo.png';
 
-    const version = document.createElement('p')
-    version.textContent = 'Version: 0.2'
+    const version = document.createElement('p');
+    version.textContent = 'Version: 0.3';
     const author = document.createElement('p');
     author.textContent = 'By Catzzye (:';
 
     const closeButton = document.createElement('button');
     closeButton.textContent = 'Close';
     closeButton.className = 'button';
-    closeButton.style.marginTop = '10px'
+
     closeButton.addEventListener('click', () => {
-        document.body.removeChild(infoWindow)
-    })
+  
+        document.body.removeChild(infoOverlay);
+    });
 
-    infoWindow.appendChild(logo)
-    infoWindow.appendChild(version)
-    infoWindow.appendChild(author)
-    infoWindow.appendChild(closeButton)
+    infoWindow.appendChild(logo);
+    infoWindow.appendChild(version);
+    infoWindow.appendChild(author);
+    infoWindow.appendChild(closeButton);
 
-    document.body.appendChild(infoWindow)
+    infoOverlay.appendChild(infoWindow);
+
+    document.body.appendChild(infoOverlay);
+
+    infoOverlay.addEventListener('click', (event) => {
+        if (event.target === infoOverlay) {
+             document.body.removeChild(infoOverlay);
+        }
+    });
 })
 
 document.getElementById('searchInput').addEventListener('input', (event) => {
-    const query = event.target.value.toLowerCase()
-    updatePlaylistUI(query)
+    filterPlaylistUI(event.target.value);
 })
 
 document.getElementById('volumeControl').addEventListener('input', (event) => {
@@ -144,6 +160,25 @@ document.getElementById('volumeControl').addEventListener('input', (event) => {
         currentHowl.volume(currentVolume);
     }
 })
+
+async function countTotalFolders(directoryPath) {
+    try {
+        let count = 0;
+        const files = fs.readdirSync(directoryPath);
+        
+        for (const file of files) {
+            const filePath = path.join(directoryPath, file);
+            if (fs.statSync(filePath).isDirectory()) {
+                count++;
+                count += await countTotalFolders(filePath);
+            }
+        }
+        return count;
+    } catch (err) {
+        console.error('Error counting folders:', err);
+        return 0;
+    }
+}
 
 async function selectAndScanFolder() {
     const userHomeDir = os.homedir();
@@ -172,9 +207,23 @@ async function selectAndScanFolder() {
 
         localStorage.setItem('selectedFolder', selectedPath);
         playlist = []; 
-        document.getElementById('overlay').style.display = 'flex';
+        
+        scannedFolders = 0;
+        totalFolders = await countTotalFolders(selectedPath);
+        
+        const overlay = document.getElementById('overlay');
+        overlay.innerHTML = `Scanning in progress...<br>Folders scanned: 0/${totalFolders}<br>This may take a while, depending on the size of your osu! library!`;
+        overlay.style.display = 'flex';
+        
         await scanDirectory(selectedPath);
-        document.getElementById('overlay').style.display = 'none';
+        savePlaylistToFile();
+        updatePlaylistUI();
+        if(playlist.length > 0) {
+            document.getElementById('nowPlayingText').textContent = 'Select a song to play!';
+        } else {
+            document.getElementById('nowPlayingText').textContent = 'No songs found in selected folder.';
+        }
+        overlay.style.display = 'none';
         document.getElementById('playlist').style.display = 'block';
         document.getElementById('selectFolder').style.display = 'none';
         document.getElementById('changeFolder').style.display = 'inline-block';
@@ -183,116 +232,155 @@ async function selectAndScanFolder() {
 
 async function scanDirectory(directoryPath) {
     try {
-        const files = fs.readdirSync(directoryPath)
+        const files = fs.readdirSync(directoryPath);
+        scannedFolders++;
+        
+        const overlay = document.getElementById('overlay');
+        overlay.innerHTML = `Scanning in progress...<br>Folders scanned: ${scannedFolders}/${totalFolders}<br>This may take a while, depending on the size of your osu! library!`;
         
         for (const file of files) {
-            const filePath = path.join(directoryPath, file)
-            const stats = fs.statSync(filePath)
+            const filePath = path.join(directoryPath, file);
+            const stats = fs.statSync(filePath);
             
             if (stats.isDirectory()) {
-                await scanDirectory(filePath)
+                await scanDirectory(filePath);
             } else if (path.extname(filePath).toLowerCase() === '.mp3') {
-                let title = path.basename(filePath)
-                let artist = 'Unknown Artist'
+                const fileSizeInKB = stats.size / 1024;
+                if (fileSizeInKB < 500) {
+                    continue;
+                }
 
-                const osuFiles = files.filter(f => path.extname(f).toLowerCase() === '.osu')
+                let title = path.basename(filePath);
+                let artist = 'Unknown Artist';
+                let creator = '';
+                let tags = '';
+
+                const osuFiles = files.filter(f => path.extname(f).toLowerCase() === '.osu');
                 if (osuFiles.length > 0) {
-                    const osuFilePath = path.join(directoryPath, osuFiles[0])
-                    const osuContent = fs.readFileSync(osuFilePath, 'utf-8')
-                    const titleMatch = osuContent.match(/Title:(.*)/)
-                    const artistMatch = osuContent.match(/Artist:(.*)/)
+                    const osuFilePath = path.join(directoryPath, osuFiles[0]);
+                    const osuContent = fs.readFileSync(osuFilePath, 'utf-8');
+                    const titleMatch = osuContent.match(/^Title:(.*)/m);
+                    const artistMatch = osuContent.match(/^Artist:(.*)/m);
+                    const creatorMatch = osuContent.match(/^Creator:(.*)/m);
+                    const tagsMatch = osuContent.match(/^Tags:(.*)/m);
 
                     if (titleMatch) {
-                        title = titleMatch[1].trim()
+                        title = titleMatch[1].trim();
                     }
                     if (artistMatch) {
-                        artist = artistMatch[1].trim()
+                        artist = artistMatch[1].trim();
+                    }
+                    if (creatorMatch) {
+                        creator = creatorMatch[1].trim();
+                    }
+                    if (tagsMatch) {
+                        tags = tagsMatch[1].trim();
                     }
                 }
 
                 try {
-                    const metadata = await mm.parseFile(filePath)
-                    const imageFiles = files.filter(f => ['.jpg', '.jpeg', '.png'].includes(path.extname(f).toLowerCase()))
-                    const imagePath = imageFiles.length > 0 ? path.join(directoryPath, imageFiles[0]) : null
+                    const metadata = await mm.parseFile(filePath);
+                    const imageFiles = files.filter(f => ['.jpg', '.jpeg', '.png'].includes(path.extname(f).toLowerCase()));
+                    const imagePath = imageFiles.length > 0 ? path.join(directoryPath, imageFiles[0]) : null;
 
                     playlist.push({
                         path: filePath,
                         title: title,
                         artist: artist,
+                        creator: creator,
+                        tags: tags,
                         duration: metadata.format.duration,
-                        image: imagePath 
-                    })
+                        image: imagePath
+                    });
                 } catch (err) {
-                    console.error(`Error reading metadata for ${filePath}:`, err)
+                    console.error(`Error reading metadata for ${filePath}:`, err);
                 }
             }
         }
-        
-        savePlaylistToFile()
-        updatePlaylistUI()
     } catch (err) {
-        console.error('Error scanning directory:', err)
+        console.error('Error scanning directory:', err);
     }
 }
 
 function updatePlaylistUI(searchQuery = '') {
     const playlistElement = document.getElementById('playlist')
     playlistElement.innerHTML = ''
-    
+    songElements = [];
+
+    const body = document.body;
+    const isDarkMode = body.classList.contains('dark-mode');
+
     playlist.forEach((song, index) => {
-        if (song.title.toLowerCase().includes(searchQuery) || song.artist.toLowerCase().includes(searchQuery)) {
-            const songElement = document.createElement('div')
-            songElement.className = 'song-item'
-            songElement.style.position = 'relative' 
-            songElement.style.marginBottom = '3px' 
-            songElement.style.height = '40px' 
+        const songElement = document.createElement('div')
+        songElement.className = 'song-item'
+        songElement.style.position = 'relative'
+        songElement.style.marginBottom = '3px'
+        songElement.style.height = '40px'
+        songElement.style.width = 'calc(100% - 20px)';
+        songElement.dataset.index = index;
 
-            const backgroundImage = document.createElement('div')
-            backgroundImage.style.position = 'absolute'
-            backgroundImage.style.top = '0'
-            backgroundImage.style.left = '0'
-            backgroundImage.style.right = '0'
-            backgroundImage.style.bottom = '0'
-            backgroundImage.style.zIndex = '0' 
+        const backgroundImage = document.createElement('div')
+        backgroundImage.style.position = 'absolute'
+        backgroundImage.style.top = '0'
+        backgroundImage.style.left = '0'
+        backgroundImage.style.right = '0'
+        backgroundImage.style.bottom = '0'
+        backgroundImage.style.zIndex = '0'
 
-            if (song.image) {
-                const imageUrl = `file://${encodeURI(song.image.replace(/\\/g, '/'))}`
-                //console.log(`Setting background image for ${song.title}: ${imageUrl}`)
+        if (song.image) {
+            try {
+                const imageUrl = pathToFileURL(song.image).href;
                 backgroundImage.style.backgroundImage = `url('${imageUrl}')`
                 backgroundImage.style.backgroundSize = 'cover'
                 backgroundImage.style.backgroundPosition = 'center'
                 backgroundImage.style.filter = 'brightness(0.7)'
+            } catch (e) {
+                console.error(`Error creating file URL for image ${song.image}:`, e);
             }
-
-            songElement.appendChild(backgroundImage)
-
-            const songText = document.createElement('span')
-            songText.textContent = `${song.title} - ${song.artist}`
-            songText.style.position = 'relative' 
-            songText.style.zIndex = '1' 
-            songText.style.fontWeight = 'bold' 
-            songText.style.padding = '2px 4px' 
-
-            songElement.style.width = 'calc(100% - 20px)' 
-            const body = document.body
-            if (body.classList.contains('dark-mode')) {
-                songText.style.color = 'black'
-                songText.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'
-            } else {
-                songText.style.color = 'white'
-                songText.style.backgroundColor = 'rgba(0, 0, 0, 0.7)' 
-            }
-
-            songElement.appendChild(songText)
-            songElement.addEventListener('click', () => playSong(index))
-            
-            if (index === currentSongIndex) {
-                songElement.style.backgroundColor = '#e0e0e0'
-            }
-            
-            playlistElement.appendChild(songElement)
         }
+
+        songElement.appendChild(backgroundImage)
+
+        const songText = document.createElement('span')
+        songText.textContent = `${song.title} - ${song.artist}`
+        songText.style.position = 'relative'
+        songText.style.zIndex = '1'
+        songText.style.fontWeight = 'bold'
+        songText.style.padding = '2px 4px'
+
+        if (isDarkMode) {
+            songText.style.color = 'black'
+            songText.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'
+        } else {
+            songText.style.color = 'white'
+            songText.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'
+        }
+
+        songElement.appendChild(songText)
+        songElement.addEventListener('click', () => playSong(index))
+
+        if (index === currentSongIndex) {
+            songElement.classList.add('playing');
+        }
+
+        playlistElement.appendChild(songElement)
+        songElements.push(songElement);
     })
+    filterPlaylistUI(document.getElementById('searchInput').value);
+}
+
+function filterPlaylistUI(searchQuery) {
+    const query = searchQuery.toLowerCase().trim();
+    songElements.forEach(songElement => {
+        const index = parseInt(songElement.dataset.index, 10);
+        const song = playlist[index];
+        const matches = query === '' ||
+                        song.title.toLowerCase().includes(query) ||
+                        song.artist.toLowerCase().includes(query) ||
+                        song.creator.toLowerCase().includes(query) ||
+                        song.tags.toLowerCase().includes(query);
+        songElement.style.display = matches ? '' : 'none';
+    });
 }
 
 function playSong(index) {
@@ -300,10 +388,29 @@ function playSong(index) {
         currentHowl.stop()
     }
 
+    const playlistElement = document.getElementById('playlist');
+    const previousSongElement = playlistElement.querySelector('.song-item.playing');
+    if (previousSongElement) {
+        previousSongElement.classList.remove('playing');
+    }
+
     currentSongIndex = index
     const song = playlist[index]
 
+    const nowPlayingTextElement = document.getElementById('nowPlayingText');
+    let nowPlayingHTML = `<strong>${song.title} - ${song.artist}</strong>`;
+    if (song.creator) {
+        nowPlayingHTML += ` [${song.creator}]`;
+    }
+    nowPlayingTextElement.innerHTML = nowPlayingHTML;
+
+    const newSongElement = playlistElement.querySelector(`.song-item[data-index="${index}"]`);
+    if (newSongElement) {
+        newSongElement.classList.add('playing');
+    }
+
     currentHowl = new Howl({
+        html5: true,
         src: [song.path],
         volume: currentVolume,
         onplay: () => {
@@ -330,7 +437,6 @@ function playSong(index) {
     })
 
     currentHowl.play()
-    updatePlaylistUI()
 }
 
 function updateSeekBar() {
@@ -427,7 +533,26 @@ function savePlaylistToFile() {
 }
 
 function loadPlaylistFromFile() {
-    const data = fs.readFileSync(playlistFilePath, 'utf-8')
-    playlist = JSON.parse(data)
-    updatePlaylistUI()
+    try {
+        const data = fs.readFileSync(playlistFilePath, 'utf-8');
+        playlist = JSON.parse(data);
+        updatePlaylistUI();
+        if (playlist.length > 0) {
+            document.getElementById('nowPlayingText').textContent = 'Select a song to play!';
+        } else {
+            document.getElementById('nowPlayingText').textContent = 'Playlist empty. Select a folder to scan.';
+        }
+    } catch (err) {
+        console.error("Error loading playlist:", err);
+        playlist = [];
+        songElements = [];
+        document.getElementById('playlist').innerHTML = '';
+        document.getElementById('nowPlayingText').textContent = 'Error loading playlist. Select folder.';
+        document.getElementById('selectFolder').style.display = 'inline-block';
+        document.getElementById('changeFolder').style.display = 'none';
+        if (fs.existsSync(playlistFilePath)) {
+            fs.unlinkSync(playlistFilePath);
+        }
+        localStorage.removeItem('selectedFolder');
+    }
 } 
