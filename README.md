@@ -3,8 +3,7 @@
 ***osu!jukebox is a music player for your osu! library!***
 It's based on Electron to ensure multiplat functionallity.
 
-![image](https://github.com/user-attachments/assets/e18d7409-1a23-4fdc-95cb-7f0c0bee7013)
-
+![image](https://github.com/user-attachments/assets/37d7eecf-67b3-47a2-bd28-9c11193891ae)
 
 ### v0.3 Notes:
 
