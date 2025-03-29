@@ -9,6 +9,7 @@ let playlist = []
 let currentSongIndex = -1
 let currentHowl = null
 let isPlaying = false
+let currentVolume = 1;
 
 const playlistFilePath = path.join(os.homedir(), 'osu_jukebox_playlist.json')
 
@@ -138,35 +139,45 @@ document.getElementById('searchInput').addEventListener('input', (event) => {
 })
 
 document.getElementById('volumeControl').addEventListener('input', (event) => {
+    currentVolume = parseFloat(event.target.value);
     if (currentHowl) {
-        currentHowl.volume(event.target.value)
+        currentHowl.volume(currentVolume);
     }
 })
 
 async function selectAndScanFolder() {
-    const userHomeDir = os.homedir()
-    const defaultPath = path.join(userHomeDir, 'AppData', 'Local', 'osu!', 'Songs')
+    const userHomeDir = os.homedir();
+    const defaultPath = path.join(userHomeDir, 'AppData', 'Local', 'osu!', 'Songs');
 
     let options = {
         properties: ['openDirectory']
-    }
+    };
 
     if (fs.existsSync(defaultPath)) {
-        options.defaultPath = defaultPath
+        options.defaultPath = defaultPath;
     }
 
-    const result = await dialog.showOpenDialog(options)
+    const result = await dialog.showOpenDialog(options);
 
     if (!result.canceled) {
-        const selectedPath = result.filePaths[0]
-        localStorage.setItem('selectedFolder', selectedPath)
-        playlist = [] 
-        document.getElementById('overlay').style.display = 'flex'
-        await scanDirectory(selectedPath)
-        document.getElementById('overlay').style.display = 'none'
-        document.getElementById('playlist').style.display = 'block'
-        document.getElementById('selectFolder').style.display = 'none'
-        document.getElementById('changeFolder').style.display = 'inline-block'
+        let selectedPath = result.filePaths[0];
+        
+        const folderName = path.basename(selectedPath);
+        const potentialSongsPath = path.join(selectedPath, 'Songs');
+        
+        if (folderName === 'osu!' && fs.existsSync(potentialSongsPath)) {
+            selectedPath = potentialSongsPath;
+            console.log('Automatically selecting Songs folder within osu! directory');
+        }
+
+        localStorage.setItem('selectedFolder', selectedPath);
+        playlist = []; 
+        document.getElementById('overlay').style.display = 'flex';
+        await scanDirectory(selectedPath);
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('playlist').style.display = 'block';
+        document.getElementById('selectFolder').style.display = 'none';
+        document.getElementById('changeFolder').style.display = 'inline-block';
     }
 }
 
@@ -184,7 +195,6 @@ async function scanDirectory(directoryPath) {
                 let title = path.basename(filePath)
                 let artist = 'Unknown Artist'
 
-                // Look for .osu file in the same directory
                 const osuFiles = files.filter(f => path.extname(f).toLowerCase() === '.osu')
                 if (osuFiles.length > 0) {
                     const osuFilePath = path.join(directoryPath, osuFiles[0])
@@ -295,6 +305,7 @@ function playSong(index) {
 
     currentHowl = new Howl({
         src: [song.path],
+        volume: currentVolume,
         onplay: () => {
             isPlaying = true
             document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 13px;" class="fas fa-pause"></i>'
