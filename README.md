@@ -6,23 +6,23 @@ It's based on Electron to ensure multiplat functionallity.
 ### v0.3 Notes:
 
 **Features:**
-1. Added a 'Folders scanned' count when the user selects a folder. This gives the user a rough estimate when the scan will be done.
-2. Songs now have a slight accent color (pink/orange based on theme) to distinguish the currently playing track.
-3. Scroll bar has been given a modern makeover with theme support.
-4. You are now able to search via Tags AND the Mapper (Creator)!
+1. Added a 'Folders scanned' count when the user selects a folder. This gives the user a rough estimate when the scan will be done. 
+2. Songs now have a slight pink accent to distinct the currently playing track. 
+3. Scroll bar has been given a modern makeover
+4. You are now able to search via Tags AND the Mapper!
 5. Added a 'Now Playing' section displaying current track info (Title, Artist, Creator).
 
 **QoL (Quality of Life):**
-1. Made volume persistent between tracks.
-2. If the main `osu!` folder is selected, the app automatically navigates to the `Songs` subfolder.
-3. Search, scanning, and playlist UI update optimisations (improving performance and responsiveness).
-4. Now ignoring MP3 files smaller than 500KB during scans (typically storyboard/hitsound files).
-5. Improved UI layout to prevent elements from overlapping player controls.
-6. Rearranged top control buttons for better grouping (Folder select on left, others on right).
-7. Added a themed, modern-looking popup for the Information button.
+1. Made volume persistant between tracks (LOL)
+2. If `osu!` folder is selected, select the `Songs` folder within it directly.
+3. Search optimisations, scan optimisations, image display optimisations (Images loaded don't force refresh on every action anymore)
+4. Now ignoring the "mp3s" smaller than 500KB as they are mostly sound effects used in storyboards of beatmaps.
+5. Song titles no longer clip the music player controls. 
+6. Seperated + Rearranged buttons at the top. 
+7. Info window revamp
 
 **Bugfixes:**
-1. Addressed potential instability/crashes related to searching with large playlists by optimizing UI updates and ensuring Howler.js uses HTML5 audio loading.
+1. App crashing when a lot of songs are loaded and search is being used. (Made Howl.JS use HTML5 audio)
 
 **NEXT UP (Possibly):**
 1.  New playback features (e.g., shuffle, repeat).
@@ -31,11 +31,7 @@ It's based on Electron to ensure multiplat functionallity.
 4.  Packaged installer and/or self-updater functionality.
 5.  Further optmisations
 
----
-
-
 **Give it a go and let me know how it does / feel free to contribute!! :):)**
-
 ---
 
 **Old notes:**
