@@ -3,13 +3,13 @@
 ***osu!jukebox is a music player for your osu! library!***
 It's based on Electron to ensure multiplat functionallity.
 
-![image](https://github.com/user-attachments/assets/37d7eecf-67b3-47a2-bd28-9c11193891ae)
+![image](https://github.com/user-attachments/assets/3d67cfcf-571d-4a54-b4a8-93e2ef0e98a1)
 
 ### v0.3.1 Notes:
-
 **Features:**
 1. Added new playback features - shuffle and repeat (also cleaned up playback bar slightly)
 2. New .msi build! (If you want to install osu!jukebox to your PC easier!) (sorry no auto-updater yet)
+
 
 ### v0.3 Notes:
 
