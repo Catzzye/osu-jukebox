@@ -1,20 +1,43 @@
 {
-  "name": "osu-jukebox-electron",
+  "name": "osu!jukebox",
   "version": "1.0.0",
   "main": "main.js",
+  "author": "Catzzye",
   "scripts": {
     "start": "electron .",
-    "packageWin": "electron-packager . osu-jukebox-electron --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
-    "packageMac": "electron-packager . osu-jukebox-electron --platform=darwin --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
-    "packageLinux": "electron-packager . osu-jukebox-electron --platform=linux --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico"
+    "packageWin": "electron-packager . osu!jukebox --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
+    "packageMac": "electron-packager . osu!jukebox --platform=darwin --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
+    "packageLinux": "electron-packager . osu!jukebox --platform=linux --arch=x64 --out=dist --overwrite --prune=true --icon=jb_icon.ico",
+    "dist:win": "electron-builder --win"
   },
   "dependencies": {
     "@electron/remote": "^2.0.12",
-    "electron": "^28.2.0",
     "howler": "^2.2.4",
     "music-metadata": "^7.14.0"
   },
   "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
     "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.electron.osujukebox",
+    "productName": "osu!jukebox",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!node_modules/**/{test,__tests__,tests,powered-test,example,examples}",
+      "!node_modules/**/*.{iml,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!node_modules/.bin",
+      "!**/*.{o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!**/*.map"
+    ],
+    "win": {
+      "target": "msi",
+      "icon": "jb_icon.ico"
+    }
   }
 }

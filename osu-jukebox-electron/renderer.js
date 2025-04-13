@@ -11,6 +11,8 @@ let currentSongIndex = -1
 let currentHowl = null
 let isPlaying = false
 let currentVolume = 1;
+let isShuffle = false;
+let isRepeat = false;
 let totalFolders = 0;
 let scannedFolders = 0;
 let songElements = [];
@@ -80,9 +82,20 @@ document.getElementById('toggleTheme').addEventListener('click', () => {
     const seekBar = document.getElementById('seekBar')
     const volumeControl = document.getElementById('volumeControl')
     const audioControls = document.getElementById('audioControls')
-    
+    const shuffleButton = document.getElementById('shuffleButton');
+    const repeatButton = document.getElementById('repeatButton');
+
     body.classList.toggle('dark-mode')
-    
+
+    const updateButtonDefaultColor = (button, isActive, activeColorDark, activeColorLight, defaultColorDark, defaultColorLight) => {
+        const isDarkMode = body.classList.contains('dark-mode');
+        if (!isActive) {
+            button.style.backgroundColor = isDarkMode ? defaultColorDark : defaultColorLight;
+        } else {
+            button.style.backgroundColor = isDarkMode ? activeColorDark : activeColorLight;
+        }
+    };
+
     if (body.classList.contains('dark-mode')) {
         themeButton.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>'
         searchIcon.style.color = 'white'
@@ -94,6 +107,8 @@ document.getElementById('toggleTheme').addEventListener('click', () => {
         volumeControl.style.background = 'white'
         volumeControl.style.accentColor = '#c50a9d'
         audioControls.style.backgroundColor = '#222'
+        updateButtonDefaultColor(shuffleButton, isShuffle, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
+        updateButtonDefaultColor(repeatButton, isRepeat, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
     } else {
         themeButton.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>'
         searchIcon.style.color = '#f94ed4'
@@ -105,8 +120,10 @@ document.getElementById('toggleTheme').addEventListener('click', () => {
         volumeControl.style.background = 'white'
         volumeControl.style.accentColor = '#f94ed4'
         audioControls.style.backgroundColor = '#950375'
+        updateButtonDefaultColor(shuffleButton, isShuffle, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
+        updateButtonDefaultColor(repeatButton, isRepeat, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
     }
-    
+
     updatePlaylistUI()
 })
 
@@ -121,7 +138,7 @@ document.getElementById('infoButton').addEventListener('click', () => {
     logo.src = 'jb_logo.png';
 
     const version = document.createElement('p');
-    version.textContent = 'Version: 0.3';
+    version.textContent = 'Version: 0.3.1';
     const author = document.createElement('p');
     author.textContent = 'By Catzzye (:';
 
@@ -130,7 +147,7 @@ document.getElementById('infoButton').addEventListener('click', () => {
     closeButton.className = 'button';
 
     closeButton.addEventListener('click', () => {
-  
+
         document.body.removeChild(infoOverlay);
     });
 
@@ -145,7 +162,7 @@ document.getElementById('infoButton').addEventListener('click', () => {
 
     infoOverlay.addEventListener('click', (event) => {
         if (event.target === infoOverlay) {
-             document.body.removeChild(infoOverlay);
+            document.body.removeChild(infoOverlay);
         }
     });
 })
@@ -161,11 +178,33 @@ document.getElementById('volumeControl').addEventListener('input', (event) => {
     }
 })
 
+document.getElementById('shuffleButton').addEventListener('click', () => {
+    isShuffle = !isShuffle;
+    const shuffleButton = document.getElementById('shuffleButton');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    if (isShuffle) {
+        shuffleButton.style.backgroundColor = isDarkMode ? '#ff8c00' : '#c50a9d';
+    } else {
+        shuffleButton.style.backgroundColor = isDarkMode ? '#555' : '#f94ed4';
+    }
+});
+
+document.getElementById('repeatButton').addEventListener('click', () => {
+    isRepeat = !isRepeat;
+    const repeatButton = document.getElementById('repeatButton');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    if (isRepeat) {
+        repeatButton.style.backgroundColor = isDarkMode ? '#ff8c00' : '#c50a9d';
+    } else {
+        repeatButton.style.backgroundColor = isDarkMode ? '#555' : '#f94ed4';
+    }
+});
+
 async function countTotalFolders(directoryPath) {
     try {
         let count = 0;
         const files = fs.readdirSync(directoryPath);
-        
+
         for (const file of files) {
             const filePath = path.join(directoryPath, file);
             if (fs.statSync(filePath).isDirectory()) {
@@ -196,29 +235,29 @@ async function selectAndScanFolder() {
 
     if (!result.canceled) {
         let selectedPath = result.filePaths[0];
-        
+
         const folderName = path.basename(selectedPath);
         const potentialSongsPath = path.join(selectedPath, 'Songs');
-        
+
         if (folderName === 'osu!' && fs.existsSync(potentialSongsPath)) {
             selectedPath = potentialSongsPath;
             console.log('Automatically selecting Songs folder within osu! directory');
         }
 
         localStorage.setItem('selectedFolder', selectedPath);
-        playlist = []; 
-        
+        playlist = [];
+
         scannedFolders = 0;
         totalFolders = await countTotalFolders(selectedPath);
-        
+
         const overlay = document.getElementById('overlay');
         overlay.innerHTML = `Scanning in progress...<br>Folders scanned: 0/${totalFolders}<br>This may take a while, depending on the size of your osu! library!`;
         overlay.style.display = 'flex';
-        
+
         await scanDirectory(selectedPath);
         savePlaylistToFile();
         updatePlaylistUI();
-        if(playlist.length > 0) {
+        if (playlist.length > 0) {
             document.getElementById('nowPlayingText').textContent = 'Select a song to play!';
         } else {
             document.getElementById('nowPlayingText').textContent = 'No songs found in selected folder.';
@@ -234,14 +273,14 @@ async function scanDirectory(directoryPath) {
     try {
         const files = fs.readdirSync(directoryPath);
         scannedFolders++;
-        
+
         const overlay = document.getElementById('overlay');
         overlay.innerHTML = `Scanning in progress...<br>Folders scanned: ${scannedFolders}/${totalFolders}<br>This may take a while, depending on the size of your osu! library!`;
-        
+
         for (const file of files) {
             const filePath = path.join(directoryPath, file);
             const stats = fs.statSync(filePath);
-            
+
             if (stats.isDirectory()) {
                 await scanDirectory(filePath);
             } else if (path.extname(filePath).toLowerCase() === '.mp3') {
@@ -375,15 +414,23 @@ function filterPlaylistUI(searchQuery) {
         const index = parseInt(songElement.dataset.index, 10);
         const song = playlist[index];
         const matches = query === '' ||
-                        song.title.toLowerCase().includes(query) ||
-                        song.artist.toLowerCase().includes(query) ||
-                        song.creator.toLowerCase().includes(query) ||
-                        song.tags.toLowerCase().includes(query);
+            song.title.toLowerCase().includes(query) ||
+            song.artist.toLowerCase().includes(query) ||
+            song.creator.toLowerCase().includes(query) ||
+            song.tags.toLowerCase().includes(query);
         songElement.style.display = matches ? '' : 'none';
     });
 }
 
 function playSong(index) {
+    if (index < 0 || index >= playlist.length) {
+        console.error("Invalid song index:", index);
+        if (currentHowl) currentHowl.stop();
+        isPlaying = false;
+        document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>';
+        return;
+    }
+
     if (currentHowl) {
         currentHowl.stop()
     }
@@ -419,10 +466,10 @@ function playSong(index) {
             updateSeekBar()
         },
         onend: () => {
-            isPlaying = false
-            document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>'
-            if (currentSongIndex < playlist.length - 1) {
-                playSong(currentSongIndex + 1)
+            if (isRepeat) {
+                playSong(currentSongIndex);
+            } else {
+                playNextSong();
             }
         },
         onload: () => {
@@ -452,18 +499,23 @@ function updateSeekBar() {
 }
 
 document.getElementById('playPauseButton').addEventListener('click', () => {
-    if (currentHowl) {
-        if (isPlaying) {
-            currentHowl.pause()
-            isPlaying = false
-            document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>'
-        } else {
-            currentHowl.play()
-            isPlaying = true
-            document.getElementById('playPauseButton').innerHTML = '<i class="fas fa-pause"></i>'
+    if (!currentHowl) {
+        if (playlist.length > 0) {
+            playSong(currentSongIndex < 0 ? 0 : currentSongIndex);
         }
+        return;
     }
-})
+
+    if (isPlaying) {
+        currentHowl.pause();
+        isPlaying = false;
+        document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>';
+    } else {
+        currentHowl.play();
+        isPlaying = true;
+        document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-pause"></i>';
+    }
+});
 
 document.getElementById('seekBar').addEventListener('input', (event) => {
     if (currentHowl) {
@@ -472,21 +524,53 @@ document.getElementById('seekBar').addEventListener('input', (event) => {
 })
 
 document.getElementById('prevTrackButton').addEventListener('click', () => {
-    if (currentSongIndex > 0) {
-        playSong(currentSongIndex - 1)
-    }
-})
+    playPreviousSong();
+});
 
 document.getElementById('nextTrackButton').addEventListener('click', () => {
-    if (currentSongIndex < playlist.length - 1) {
-        playSong(currentSongIndex + 1)
-    }
-})
+    playNextSong();
+});
 
 function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60) || 0
-    const secs = Math.floor(seconds % 60) || 0
-    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+}
+
+function playNextSong() {
+    if (playlist.length === 0) return;
+
+    let nextIndex;
+    if (isShuffle) {
+        if (playlist.length <= 1) {
+            nextIndex = 0;
+        } else {
+            do {
+                nextIndex = Math.floor(Math.random() * playlist.length);
+            } while (nextIndex === currentSongIndex);
+        }
+    } else {
+        nextIndex = (currentSongIndex + 1) % playlist.length;
+    }
+    playSong(nextIndex);
+}
+
+function playPreviousSong() {
+    if (playlist.length === 0) return;
+
+    let prevIndex;
+    if (isShuffle) {
+        if (playlist.length <= 1) {
+            prevIndex = 0;
+        } else {
+            do {
+                prevIndex = Math.floor(Math.random() * playlist.length);
+            } while (prevIndex === currentSongIndex);
+        }
+    } else {
+        prevIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
+    }
+    playSong(prevIndex);
 }
 
 function setInitialTheme() {
@@ -497,6 +581,17 @@ function setInitialTheme() {
     const seekBar = document.getElementById('seekBar')
     const volumeControl = document.getElementById('volumeControl')
     const audioControls = document.getElementById('audioControls')
+    const shuffleButton = document.getElementById('shuffleButton');
+    const repeatButton = document.getElementById('repeatButton');
+
+    const setInitialButtonColor = (button, isActive, activeColorDark, activeColorLight, defaultColorDark, defaultColorLight) => {
+        const isDarkMode = body.classList.contains('dark-mode');
+        if (isActive) {
+            button.style.backgroundColor = isDarkMode ? activeColorDark : activeColorLight;
+        } else {
+            button.style.backgroundColor = isDarkMode ? defaultColorDark : defaultColorLight;
+        }
+    };
 
     if (body.classList.contains('dark-mode')) {
         themeButton.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>'
@@ -509,6 +604,8 @@ function setInitialTheme() {
         volumeControl.style.background = 'white'
         volumeControl.style.accentColor = '#c50a9d'
         audioControls.style.backgroundColor = '#222'
+        setInitialButtonColor(shuffleButton, isShuffle, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
+        setInitialButtonColor(repeatButton, isRepeat, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
     } else {
         themeButton.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>'
         searchIcon.style.color = '#f94ed4'
@@ -520,6 +617,8 @@ function setInitialTheme() {
         volumeControl.style.background = '#333'
         volumeControl.style.accentColor = '#f94ed4'
         audioControls.style.backgroundColor = '#950375'
+        setInitialButtonColor(shuffleButton, isShuffle, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
+        setInitialButtonColor(repeatButton, isRepeat, '#ff8c00', '#c50a9d', '#555', '#f94ed4');
     }
 }
 
