@@ -178,6 +178,33 @@ document.getElementById('volumeControl').addEventListener('input', (event) => {
     }
 })
 
+const audioControls = document.getElementById('audioControls');
+const volumeControl = document.getElementById('volumeControl');
+
+audioControls.addEventListener('wheel', (event) => {
+    event.preventDefault();
+
+    let change = 0;
+    if (event.deltaY < 0) {
+        change = 0.05;
+    } else if (event.deltaY > 0) {
+        change = -0.05;
+    }
+
+    if (change !== 0) {
+        let newVolume = currentVolume + change;
+        newVolume = Math.max(0, Math.min(1, newVolume));
+
+        if (newVolume !== currentVolume) {
+            currentVolume = newVolume;
+            volumeControl.value = currentVolume; 
+            if (currentHowl) {
+                currentHowl.volume(currentVolume); 
+            }
+        }
+    }
+}, { passive: false });
+
 document.getElementById('shuffleButton').addEventListener('click', () => {
     isShuffle = !isShuffle;
     const shuffleButton = document.getElementById('shuffleButton');
@@ -462,7 +489,7 @@ function playSong(index) {
         volume: currentVolume,
         onplay: () => {
             isPlaying = true
-            document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 13px;" class="fas fa-pause"></i>'
+            document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-pause"></i>'
             updateSeekBar()
         },
         onend: () => {
