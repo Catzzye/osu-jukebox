@@ -5,6 +5,14 @@ It's based on Electron to ensure multiplat functionallity.
 
 ![image](https://github.com/user-attachments/assets/3d67cfcf-571d-4a54-b4a8-93e2ef0e98a1)
 
+### v0.3.2 Notes:
+**Features:**
+1. Scroll to adjust volume has been added
+
+**QOL:**
+1. Default Volume set to 80%
+
+
 ### v0.3.1 Notes:
 **Features:**
 1. Added new playback features - shuffle and repeat (also cleaned up playback bar slightly)

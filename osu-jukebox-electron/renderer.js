@@ -138,7 +138,7 @@ document.getElementById('infoButton').addEventListener('click', () => {
     logo.src = 'jb_logo.png';
 
     const version = document.createElement('p');
-    version.textContent = 'Version: 0.3.1';
+    version.textContent = 'Version: 0.3.2';
     const author = document.createElement('p');
     author.textContent = 'By Catzzye (:';
 
