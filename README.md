@@ -5,6 +5,10 @@ It's based on Electron to ensure multiplat functionallity.
 
 ![image](https://github.com/user-attachments/assets/e708f902-6af4-4c3e-bdeb-3b0c2501070a)
 
+### v0.3.3 Notes:
+**Features:**
+1. Windows IPC added - you can now Play/Pause, Volume Up/Down, Next/Previous track via shortcuts on a regular/macro keyboard, Windows itself, etc.
+
 ### v0.3.2 Notes:
 **Features:**
 1. Scroll to adjust volume has been added

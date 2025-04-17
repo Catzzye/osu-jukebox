@@ -5,6 +5,7 @@ const mm = require('music-metadata')
 const os = require('os')
 const { pathToFileURL } = require('url')
 var { Howl, Howler } = require('howler')
+const { ipcRenderer } = require('electron')
 
 let playlist = []
 let currentSongIndex = -1
@@ -18,6 +19,58 @@ let scannedFolders = 0;
 let songElements = [];
 
 const playlistFilePath = path.join(os.homedir(), 'osu_jukebox_playlist.json')
+
+
+ipcRenderer.on('media-play-pause', () => {
+    const playPauseButton = document.getElementById('playPauseButton');
+    if (currentHowl) {
+        if (isPlaying) {
+            currentHowl.pause();
+            isPlaying = false;
+            playPauseButton.innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>';
+        } else {
+            currentHowl.play();
+            isPlaying = true;
+            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+    } else if (playlist.length > 0) {
+        playSong(currentSongIndex !== -1 ? currentSongIndex : 0);
+    }
+});
+
+ipcRenderer.on('media-stop', () => {
+    if (currentHowl) {
+        currentHowl.stop();
+        isPlaying = false;
+        document.getElementById('playPauseButton').innerHTML = '<i style="padding-left: 8px;" class="fas fa-play"></i>';
+        document.getElementById('currentTime').textContent = '0:00';
+        document.getElementById('duration').textContent = '0:00';
+        document.getElementById('seekBar').value = 0;
+    }
+});
+
+ipcRenderer.on('media-volume-up', () => {
+    let newVolume = Math.min(currentVolume + 0.05, 1);
+    currentVolume = newVolume;
+    Howler.volume(currentVolume);
+    document.getElementById('volumeControl').value = currentVolume;
+});
+
+ipcRenderer.on('media-volume-down', () => {
+    let newVolume = Math.max(currentVolume - 0.05, 0);
+    currentVolume = newVolume;
+    Howler.volume(currentVolume);
+    document.getElementById('volumeControl').value = currentVolume;
+});
+
+ipcRenderer.on('media-next-track', () => {
+    playNextSong();
+});
+
+ipcRenderer.on('media-prev-track', () => {
+    playPreviousSong();
+});
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     const savedPath = localStorage.getItem('selectedFolder')
@@ -138,7 +191,7 @@ document.getElementById('infoButton').addEventListener('click', () => {
     logo.src = 'jb_logo.png';
 
     const version = document.createElement('p');
-    version.textContent = 'Version: 0.3.2';
+    version.textContent = 'Version: 0.3.3';
     const author = document.createElement('p');
     author.textContent = 'By Catzzye (:';
 
