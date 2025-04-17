@@ -13,7 +13,7 @@ It's based on Electron to ensure multiplat functionallity.
 **Features:**
 1. Scroll to adjust volume has been added
 
-**QOL:**
+**QoL:**
 1. Default Volume set to 80%
 2. Initial 'duration' text set to --:-- and bolded
 
